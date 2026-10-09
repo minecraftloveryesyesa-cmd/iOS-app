@@ -15,7 +15,7 @@ struct ContentView: View {
     private var filteredFiles: [IPAFile] {
         let files = archive?.files ?? []
 
-        if searchText.isEmpty {
+        guard !searchText.isEmpty else {
             return files
         }
 
@@ -47,20 +47,26 @@ struct ContentView: View {
                 }
             }
             .fileImporter(
-    isPresented: $showingImporter,
-    allowedContentTypes: [.data],
-    allowsMultipleSelection: false
-) { result in
-    switch result {
-    case .success(let url):
-        print("IPAScope: 選択成功:", url.lastPathComponent)
-        importResult(.success(url))
+                isPresented: $showingImporter,
+                allowedContentTypes: [.data],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let url):
+                    print(
+                        "IPAScope: 選択成功:",
+                        url.lastPathComponent
+                    )
+                    importResult(.success(url))
 
-    case .failure(let error):
-        print("IPAScope: 選択失敗:", error.localizedDescription)
-        errorMessage = error.localizedDescription
-    }
-}
+                case .failure(let error):
+                    print(
+                        "IPAScope: 選択失敗:",
+                        error.localizedDescription
+                    )
+                    errorMessage = error.localizedDescription
+                }
+            }
             .sheet(isPresented: $isShowingText) {
                 textViewer
             }
@@ -306,21 +312,19 @@ struct ContentView: View {
         }
     }
 
+    // 単体のURLを受け取り、ファイルを解析する
     private func importResult(
-        _ result: Result<[URL], Error>
+        _ result: Result<URL, Error>
     ) {
         switch result {
-        case .success(let urls):
-            guard let picked = urls.first else {
-                errorMessage = "ファイルが選択されていません。"
-                return
-            }
-
+        case .success(let picked):
             isLoading = true
 
             Task {
                 defer {
-                    isLoading = false
+                    Task { @MainActor in
+                        isLoading = false
+                    }
                 }
 
                 let access =
@@ -352,16 +356,18 @@ struct ContentView: View {
                         archive = loaded
                         searchText = ""
                         selectedFile = nil
+                        textContent = ""
                     }
                 } catch {
                     await MainActor.run {
-                        errorMessage = error.localizedDescription
+                        errorMessage =
+                            "ファイルを読み込めませんでした: "
+                            + error.localizedDescription
                     }
                 }
             }
 
         case .failure(let error):
-            print("IPAScope: インポート処理エラー:", error)
             errorMessage = error.localizedDescription
         }
     }
