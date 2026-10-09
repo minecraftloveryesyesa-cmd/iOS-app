@@ -1,4 +1,3 @@
-
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -49,10 +48,15 @@ struct ContentView: View {
             .fileImporter(
                 isPresented: $showingImporter,
                 allowedContentTypes: [.data],
-                allowsMultipleSelection: false
+                allowsMultipleSelection: true
             ) { result in
                 switch result {
-                case .success(let url):
+                case .success(let urls):
+                    guard let url = urls.first else {
+                        errorMessage = "ファイルが選択されていません"
+                        return
+                    }
+
                     print(
                         "IPAScope: 選択成功:",
                         url.lastPathComponent
@@ -312,7 +316,7 @@ struct ContentView: View {
         }
     }
 
-    // 単体のURLを受け取り、ファイルを解析する
+    // 選択したIPAを読み込んで解析する
     private func importResult(
         _ result: Result<URL, Error>
     ) {
