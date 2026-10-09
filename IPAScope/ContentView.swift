@@ -47,20 +47,20 @@ struct ContentView: View {
                 }
             }
             .fileImporter(
-                isPresented: $showingImporter,
-                allowedContentTypes: [.item],
-                allowsMultipleSelection: false
-            ) { result in
-                switch result {
-                case .success(let url):
-                    print("IPAScope: 選択されたファイル:", url)
-                    importResult(.success(url))
+    isPresented: $showingImporter,
+    allowedContentTypes: [.data],
+    allowsMultipleSelection: false
+) { result in
+    switch result {
+    case .success(let url):
+        print("IPAScope: 選択成功:", url.lastPathComponent)
+        importResult(.success(url))
 
-                case .failure(let error):
-                    print("IPAScope: ファイル選択エラー:", error)
-                    errorMessage = error.localizedDescription
-                }
-            }
+    case .failure(let error):
+        print("IPAScope: 選択失敗:", error.localizedDescription)
+        errorMessage = error.localizedDescription
+    }
+}
             .sheet(isPresented: $isShowingText) {
                 textViewer
             }
