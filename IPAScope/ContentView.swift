@@ -184,7 +184,8 @@ struct ContentView: View {
                 )
             }
 
-            Section("内部ファイル") {
+            // 修正箇所：Sectionのタイトルをheaderで明示
+            Section {
                 if filteredFiles.isEmpty {
                     ContentUnavailableView.search(
                         text: searchText
@@ -227,12 +228,10 @@ struct ContentView: View {
 
                                 if !file.isDirectory {
                                     Text(
-                                        ByteCountFormatter
-                                            .string(
-                                                fromByteCount:
-                                                    Int64(file.size),
-                                                countStyle: .file
-                                            )
+                                        ByteCountFormatter.string(
+                                            fromByteCount: Int64(file.size),
+                                            countStyle: .file
+                                        )
                                     )
                                     .font(.caption2)
                                     .foregroundStyle(.tertiary)
@@ -242,6 +241,8 @@ struct ContentView: View {
                         .buttonStyle(.plain)
                     }
                 }
+            } header: {
+                Text("内部ファイル")
             } footer: {
                 Text(
                     "読める形式のテキストファイルをタップすると"
