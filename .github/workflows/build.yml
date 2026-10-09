@@ -1,49 +1,55 @@
-name: Build Unsigned iOS IPA
+
+name: Build IPAScope IPA
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main, master]
 
 jobs:
   build:
     runs-on: macos-26
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Show Xcode version
-        run: xcodebuild -version
+      - name: Resolve Swift package
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project IPAScope.xcodeproj \
+            -scheme IPAScope
 
       - name: Build unsigned app
         run: |
-          rm -rf build
-
+          set -o pipefail
           xcodebuild \
-            -project MyFirstApp.xcodeproj \
-            -scheme MyFirstApp \
-            -sdk iphoneos \
+            -project IPAScope.xcodeproj \
+            -scheme IPAScope \
             -configuration Release \
-            -derivedDataPath build/DerivedData \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            build
+            CODE_SIGN_IDENTITY="" \
+            build | tee build.log
 
-      - name: Create IPA
+      - name: Package IPA
         run: |
-          mkdir -p build/Payload
+          APP_PATH="build/Build/Products/Release-iphoneos/IPAScope.app"
+          test -d "$APP_PATH"
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -qry IPAScope-unsigned.ipa Payload
+          rm -rf Payload
 
-          cp -R \
-            build/DerivedData/Build/Products/Release-iphoneos/MyFirstApp.app \
-            build/Payload/
-
-          cd build
-          zip -r MyFirstApp-unsigned.ipa Payload
-
-      - name: Upload IPA
+      - name: Upload IPA and build log
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: MyFirstApp-unsigned-IPA
-          path: build/MyFirstApp-unsigned.ipa
+          name: IPAScope-IPA
+          path: |
+            IPAScope-unsigned.ipa
+            build.log
+          if-no-files-found: warn
+          retention-days: 14
