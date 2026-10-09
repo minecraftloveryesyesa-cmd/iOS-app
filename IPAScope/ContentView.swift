@@ -54,7 +54,7 @@ struct ContentView: View {
                 switch result {
                 case .success(let url):
                     print("IPAScope: 選択されたファイル:", url)
-                    importResult(.success([url]))
+                    importResult(.success(url))
 
                 case .failure(let error):
                     print("IPAScope: ファイル選択エラー:", error)
