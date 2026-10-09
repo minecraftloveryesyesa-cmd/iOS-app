@@ -48,13 +48,19 @@ struct ContentView: View {
             }
             .fileImporter(
                 isPresented: $showingImporter,
-                allowedContentTypes: [
-                    UTType(filenameExtension: "ipa") ?? .zip,
-                    .zip
-                ],
-                allowsMultipleSelection: false,
-                onCompletion: importResult
-            )
+                allowedContentTypes: [.item],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let url):
+                    print("IPAScope: 選択されたファイル:", url)
+                    importResult(.success([url]))
+
+                case .failure(let error):
+                    print("IPAScope: ファイル選択エラー:", error)
+                    errorMessage = error.localizedDescription
+                }
+            }
             .sheet(isPresented: $isShowingText) {
                 textViewer
             }
@@ -184,7 +190,6 @@ struct ContentView: View {
                 )
             }
 
-            // 修正箇所：Sectionのタイトルをheaderで明示
             Section {
                 if filteredFiles.isEmpty {
                     ContentUnavailableView.search(
@@ -307,6 +312,7 @@ struct ContentView: View {
         switch result {
         case .success(let urls):
             guard let picked = urls.first else {
+                errorMessage = "ファイルが選択されていません。"
                 return
             }
 
@@ -355,6 +361,7 @@ struct ContentView: View {
             }
 
         case .failure(let error):
+            print("IPAScope: インポート処理エラー:", error)
             errorMessage = error.localizedDescription
         }
     }
